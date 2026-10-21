@@ -129,13 +129,21 @@ def tile_header(svg, t, name, tagline, link, cx=640):
     ])
 
 
-def tile_frame(svg, t, w, h, inner):
-    svg.defs.append(f'<clipPath id="tile"><rect width="{w}" height="{h}" rx="28"/></clipPath>')
+def tile_frame(svg, t, w, h, inner, fade=True):
+    """Transparenter Rahmen; angeschnittene Inhalte laufen unten weich aus."""
     svg.defs.append(
         f'<filter id="sh" x="-20%" y="-20%" width="140%" height="140%">'
         f'<feDropShadow dx="0" dy="18" stdDeviation="28" flood-color="#000" flood-opacity="{t["shadow"]}"/></filter>'
     )
-    return f'<g clip-path="url(#tile)"><rect width="{w}" height="{h}" fill="{t["tile"]}"/>{inner}</g>'
+    if not fade:
+        return inner
+    svg.defs.append(
+        f'<linearGradient id="fade" x1="0" y1="{h - 170}" x2="0" y2="{h}" gradientUnits="userSpaceOnUse">'
+        f'<stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>'
+        f'<mask id="m" maskUnits="userSpaceOnUse" x="0" y="0" width="{w}" height="{h}">'
+        f'<rect width="{w}" height="{h}" fill="url(#fade)"/></mask>'
+    )
+    return f'<g mask="url(#m)">{inner}</g>'
 
 
 def browser(svg, t, x, y, w, h, url):
@@ -230,8 +238,7 @@ def hero(fonts, t):
                      + app_icon(svg, x, 360, size, icon, color)
                      + svg.text(x + size / 2, 486, name, 14, 500, t["ink2"], "middle") + "</g>")
 
-    svg.defs.append(f'<clipPath id="tile"><rect width="{W}" height="{H}" rx="28"/></clipPath>')
-    svg.body.append(f'<g clip-path="url(#tile)"><rect width="{W}" height="{H}" fill="{t["tile"]}"/>{"".join(inner)}</g>')
+    svg.body.append("".join(inner))
     return svg
 
 
@@ -267,8 +274,7 @@ def specs(fonts, t):
         inner.append(svg.text(rx, y + 66, role, 22, 600, t["ink"], ls=-0.3))
         inner.append(svg.text(rx, y + 96, desc, 17, 400, t["ink2"]))
 
-    svg.defs.append(f'<clipPath id="tile"><rect width="{W}" height="{H}" rx="28"/></clipPath>')
-    svg.body.append(f'<g clip-path="url(#tile)"><rect width="{W}" height="{H}" fill="{t["tile"]}"/>{"".join(inner)}</g>')
+    svg.body.append("".join(inner))
     return svg
 
 
@@ -565,7 +571,7 @@ def neatshot(fonts, t):
 
     inner.append(f'<g filter="url(#sh)"><rect x="{sx}" y="{sy}" width="{sw}" height="{sh}" rx="14" fill="{t["surface"]}"/></g>')
     inner.append(f'<g clip-path="url(#scr)">{"".join(scr)}</g>')
-    svg.body.append(tile_frame(svg, t, W, H, "".join(inner)))
+    svg.body.append(tile_frame(svg, t, W, H, "".join(inner), fade=False))
     return svg
 
 
